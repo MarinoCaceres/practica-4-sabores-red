@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import mx.tec.sabores.domain.Restaurant
 import mx.tec.sabores.ui.screens.MyReviewsScreen
 import mx.tec.sabores.ui.screens.NewReviewScreen
 import mx.tec.sabores.ui.screens.RestaurantDetailScreen
@@ -91,7 +92,7 @@ fun SaboresApp() {
                 val detalle = viewModel.detalle ?: return@composable
 
                 RestaurantDetailScreen(
-                    restaurant = detalle.restaurant,
+                    restaurant = detalle.restaurant as Restaurant,
                     summary = detalle.summary,
                     reviews = detalle.reviews,
                     onWriteReviewClick = { nav.navigate(Route.newReview(id)) },
@@ -109,13 +110,14 @@ fun SaboresApp() {
                 val formViewModel: NewReviewViewModel = viewModel()
 
                 NewReviewScreen(
-                    restaurant = restaurant,
+                    restaurant = restaurant as Restaurant,
                     uiState = formViewModel.uiState,
                     onStarsChange = formViewModel::onStarsChange,
                     onCommentChange = formViewModel::onCommentChange,
                     onSave = {
-                        // Todavía no guarda: publicar contra el servidor es el Bloque C.
-                        nav.popBackStack()
+                        // El popBackStack ya no es inmediato: ocurre cuando el servidor confirma.
+                        // Si falla, la pantalla se queda y el error se ve.
+                        formViewModel.publicar(id) { nav.popBackStack() }
                     },
                     onCancel = { nav.popBackStack() }
                 )
