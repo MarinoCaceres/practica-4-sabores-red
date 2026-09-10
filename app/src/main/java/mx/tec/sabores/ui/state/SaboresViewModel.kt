@@ -36,10 +36,12 @@ class SaboresViewModel(
 
     var detalle by mutableStateOf<UiState<Detalle>>(UiState.Cargando)
         private set
-    var mias by mutableStateOf<List<MyReviewItem>>(emptyList())
+    var mias by mutableStateOf<UiState<List<MyReviewItem>>>(UiState.Cargando)
         private set
 
-    init { cargarRestaurantes() }
+    init {
+        cargarRestaurantes()
+    }
 
     fun cargarRestaurantes() {
         viewModelScope.launch {
@@ -58,6 +60,46 @@ class SaboresViewModel(
         viewModelScope.launch {
             detalle = UiState.Cargando
             detalle = pedir { Detalle(repository.getById(id), repository.getReviews(id)) }
+        }
+    }
+
+    fun cargarMisResenas() {
+        viewModelScope.launch {
+            mias = UiState.Cargando
+            mias = pedir {
+                val reviews = repository.getMyReviews()
+                val restaurants = repository.getAll()
+                reviews.map { review ->
+                    val name = restaurants.find { it.id == review.restaurantId }?.name ?: "Desconocido"
+                    MyReviewItem(name, review)
+                }
+            }
+        }
+    }
+
+    fun editarResena(reviewId: Int, stars: Int, comment: String) {
+        viewModelScope.launch {
+            try {
+                repository.editReview(reviewId, stars, comment)
+                cargarMisResenas()
+            } catch (e: IOException) {
+                mias = UiState.Error("No hay conexión. Revisa tu internet.")
+            } catch (e: HttpException) {
+                mias = UiState.Error(mensajeDe(e))
+            }
+        }
+    }
+
+    fun borrarResena(reviewId: Int) {
+        viewModelScope.launch {
+            try {
+                repository.deleteReview(reviewId)
+                cargarMisResenas()
+            } catch (e: IOException) {
+                mias = UiState.Error("No hay conexión. Revisa tu internet.")
+            } catch (e: HttpException) {
+                mias = UiState.Error(mensajeDe(e))
+            }
         }
     }
 

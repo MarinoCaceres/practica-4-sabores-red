@@ -81,7 +81,64 @@ fun SaboresApp() {
             }
 
             composable(Route.MY_REVIEWS) {
-                MyReviewsScreen(items = viewModel.mias)
+                LaunchedEffect(Unit) {
+                    viewModel.cargarMisResenas()
+                }
+
+                when (val estado = viewModel.mias) {
+                    is UiState.Cargando -> CargandoView()
+                    is UiState.Error -> ErrorView(
+                        mensaje = estado.mensaje,
+                        onReintentar = { viewModel.cargarMisResenas() }
+                    )
+
+                    is UiState.Exito -> MyReviewsScreen(
+                        items = estado.datos,
+                        onEdit = { item -> nav.navigate(Route.editReview(item.review.id)) },
+                        onDelete = { item -> viewModel.borrarResena(item.review.id) }
+                    )
+                }
+            }
+
+            composable(
+                route = Route.EDIT_REVIEW,
+                arguments = listOf(navArgument(Route.ARG_REVIEW_ID) { type = NavType.IntType })
+            ) { entry ->
+                val reviewId = entry.arguments?.getInt(Route.ARG_REVIEW_ID) ?: return@composable
+                
+                // Buscamos la reseña en la lista que ya tenemos en el SaboresViewModel
+                val miasState = viewModel.mias
+                if (miasState !is UiState.Exito) return@composable
+                val item = miasState.datos.find { it.review.id == reviewId } ?: return@composable
+                
+                val editViewModel: NewReviewViewModel = viewModel()
+                
+                // Solo cargamos los datos la primera vez
+                LaunchedEffect(reviewId) {
+                    editViewModel.cargarParaEditar(item.review.stars, item.review.comment)
+                }
+
+                NewReviewScreen(
+                    restaurant = Restaurant(
+                        id = item.review.restaurantId,
+                        name = item.restaurantName,
+                        cuisine = "",
+                        address = "",
+                        description = "",
+                        priceLevel = 1,
+                        emoji = ""
+                    ),
+                    uiState = editViewModel.uiState,
+                    onStarsChange = editViewModel::onStarsChange,
+                    onCommentChange = editViewModel::onCommentChange,
+                    onSave = {
+                        editViewModel.actualizar(reviewId) {
+                            viewModel.cargarMisResenas()
+                            nav.popBackStack()
+                        }
+                    },
+                    onCancel = { nav.popBackStack() }
+                )
             }
 
             composable(

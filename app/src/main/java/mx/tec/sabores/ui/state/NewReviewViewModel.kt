@@ -45,6 +45,10 @@ class NewReviewViewModel(
         }
     }
 
+    fun cargarParaEditar(stars: Int, comment: String) {
+        uiState = uiState.copy(stars = stars, comment = comment)
+    }
+
     fun publicar(restaurantId: Int, alTerminar: () -> Unit) {
         if (!uiState.canSave) return
         viewModelScope.launch {
@@ -57,6 +61,25 @@ class NewReviewViewModel(
                 uiState = uiState.copy(
                     guardando = false,
                     errorAlGuardar = "No hay conexión. Tu reseña no se publicó."
+                )
+            } catch (e: HttpException) {
+                uiState = uiState.copy(guardando = false, errorAlGuardar = mensajeDe(e))
+            }
+        }
+    }
+
+    fun actualizar(reviewId: Int, alTerminar: () -> Unit) {
+        if (!uiState.canSave) return
+        viewModelScope.launch {
+            uiState = uiState.copy(guardando = true, errorAlGuardar = null)
+            try {
+                repository.editReview(reviewId, uiState.stars, uiState.comment)
+                uiState = uiState.copy(guardando = false)
+                alTerminar()
+            } catch (e: IOException) {
+                uiState = uiState.copy(
+                    guardando = false,
+                    errorAlGuardar = "No hay conexión. No se guardaron los cambios."
                 )
             } catch (e: HttpException) {
                 uiState = uiState.copy(guardando = false, errorAlGuardar = mensajeDe(e))

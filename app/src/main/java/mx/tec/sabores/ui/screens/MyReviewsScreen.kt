@@ -9,9 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +28,12 @@ import mx.tec.sabores.ui.components.StarsRow
 import mx.tec.sabores.ui.state.MyReviewItem
 
 @Composable
-fun MyReviewsScreen(items: List<MyReviewItem>, modifier: Modifier = Modifier) {
+fun MyReviewsScreen(
+    items: List<MyReviewItem>,
+    onEdit: (MyReviewItem) -> Unit,
+    onDelete: (MyReviewItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
     if (items.isEmpty()) {
         Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("Todavía no has reseñado ningún lugar.",
@@ -42,6 +53,18 @@ fun MyReviewsScreen(items: List<MyReviewItem>, modifier: Modifier = Modifier) {
                     StarsRow(item.review.stars)
                     Spacer(Modifier.height(6.dp))
                     Text(item.review.comment, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = { onEdit(item) }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar")
+                        }
+                        IconButton(onClick = { onDelete(item) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Borrar")
+                        }
+                    }
                 }
             }
         }
